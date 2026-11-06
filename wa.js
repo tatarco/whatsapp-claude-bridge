@@ -255,24 +255,27 @@ function withReply(m, byId) {
   const orig = byId.get(m.replyTo.id)
   out.replyTo = {
     ...m.replyTo,
-    text: m.replyTo.text || orig?.text || null,
+    text: orig?.text || m.replyTo.text || null, // the embedded quote is sender-supplied, so the logged original wins
     name: orig ? nameOf(orig) : (m.replyTo.sender ? nameOf({ sender: m.replyTo.sender, chat: m.replyTo.sender }) : null),
   }
   return out
 }
 const indexById = (log) => new Map(log.filter(r => r.id).map(r => [r.id, r]))
 
+// Realpath so a symlink can't smuggle out a session. Covers every number's auth/ dir, not just this one.
+const isAuthPath = (fp) => fs.realpathSync(fp).split(path.sep).includes('auth')
+
 function json(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json' })
   res.end(JSON.stringify(body, null, 2))
 }
 
-module.exports = { extractText, replyOf, senderOf }
+module.exports = { extractText, replyOf, senderOf, isAuthPath }
 if (require.main !== module) return
 
 http.createServer(async (req, res) => {
   // Any web page can reach localhost: refuse browser requests (CSRF, DNS rebinding), or a site could post from your number.
-  if (req.headers.origin || !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return json(res, 403, { error: 'forbidden' })
+  if (req.headers.origin || req.headers['sec-fetch-site'] || !/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host || '')) return json(res, 403, { error: 'forbidden' })
   const url = new URL(req.url, 'http://localhost')
   const q = url.searchParams
   try {
@@ -351,7 +354,7 @@ http.createServer(async (req, res) => {
       fs.mkdirSync(dir, { recursive: true })
       const ext = (doc.fileName?.match(/\.[a-z0-9]+$/i) || [''])[0]
         || '.' + (doc.mimetype || 'application/octet-stream').split('/')[1].split(';')[0]
-      const file = path.join(dir, `${id}${ext}`)
+      const file = path.join(dir, `${id.replace(/[^\w-]/g, '_')}${ext}`) // ids come from the sender: no ../ out of media/
       if (!fs.existsSync(file)) {
         const buf = await downloadMediaMessage(m, 'buffer', {})
         fs.writeFileSync(file, buf)
@@ -445,6 +448,7 @@ http.createServer(async (req, res) => {
         // file - the receiving agent sees a different thing, so it matters.
         const fp = file.replace(/^~/, process.env.HOME)
         if (!fs.existsSync(fp)) return json(res, 404, { error: `no such file: ${fp}` })
+        if (isAuthPath(fp)) return json(res, 403, { error: 'refusing to send session credentials' })
         const buf = fs.readFileSync(fp)
         const kind = type || 'document'
         const msg =

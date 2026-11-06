@@ -13,6 +13,9 @@ Do the steps in order. The user only has to answer step 1 and type a code on the
 Tell them plainly: this is an unofficial client. Bulk or unsolicited sending can get a number
 banned, and each `auth/` dir is a full login to that account, so never copy or commit it.
 
+The API has no password: it trusts anything on the machine, and only blocks browsers. Install on a
+machine only this user can log into, because any other local user could read and send.
+
 ## 2. Install
 
 Needs Node 20+ and git. The Baileys fork builds from source on install, which takes about 4 minutes.

@@ -1,6 +1,7 @@
 // Run with `npm test`. No network: wa.js only connects when run directly.
 const assert = require('assert')
-const { extractText, replyOf, senderOf } = require('./wa.js')
+const fs = require('fs'), os = require('os'), path = require('path')
+const { extractText, replyOf, senderOf, isAuthPath } = require('./wa.js')
 
 assert.equal(extractText({ message: { conversation: 'hi' } }), 'hi')
 assert.equal(extractText({ message: { extendedTextMessage: { text: 'reply' } } }), 'reply')
@@ -21,4 +22,14 @@ assert.equal(senderOf({ key: { remoteJid: GROUP, participant: A } }, GROUP), A)
 assert.equal(senderOf({ key: { remoteJid: GROUP, participant: B } }, GROUP), B)
 assert.equal(senderOf({ key: { remoteJid: GROUP, fromMe: true, participant: A } }, GROUP), 'me')
 assert.equal(senderOf({ key: { remoteJid: A } }, A), A)
+// Session credentials never leave through /send, including through a symlink.
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'wa-test-'))
+fs.mkdirSync(path.join(tmp, 'auth'))
+fs.writeFileSync(path.join(tmp, 'auth', 'creds.json'), '{}')
+fs.writeFileSync(path.join(tmp, 'photo.jpg'), '')
+fs.symlinkSync(path.join(tmp, 'auth', 'creds.json'), path.join(tmp, 'innocent.jpg'))
+assert.equal(isAuthPath(path.join(tmp, 'auth', 'creds.json')), true)
+assert.equal(isAuthPath(path.join(tmp, 'innocent.jpg')), true)
+assert.equal(isAuthPath(path.join(tmp, 'photo.jpg')), false)
+fs.rmSync(tmp, { recursive: true })
 console.log('ok')
