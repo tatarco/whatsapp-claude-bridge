@@ -263,7 +263,8 @@ function withReply(m, byId) {
 const indexById = (log) => new Map(log.filter(r => r.id).map(r => [r.id, r]))
 
 // Realpath so a symlink can't smuggle out a session. Covers every number's auth/ dir, not just this one.
-const isAuthPath = (fp) => fs.realpathSync(fp).split(path.sep).includes('auth')
+// Lowercased because macOS paths are case-insensitive: .../AUTH/creds.json is the same file.
+const isAuthPath = (fp) => fs.realpathSync.native(fp).toLowerCase().split(path.sep).includes('auth')
 
 function json(res, code, body) {
   res.writeHead(code, { 'content-type': 'application/json' })

@@ -31,5 +31,7 @@ fs.symlinkSync(path.join(tmp, 'auth', 'creds.json'), path.join(tmp, 'innocent.jp
 assert.equal(isAuthPath(path.join(tmp, 'auth', 'creds.json')), true)
 assert.equal(isAuthPath(path.join(tmp, 'innocent.jpg')), true)
 assert.equal(isAuthPath(path.join(tmp, 'photo.jpg')), false)
+fs.mkdirSync(path.join(tmp, 'AUTH'))
+assert.equal(isAuthPath(path.join(tmp, 'AUTH')), true)
 fs.rmSync(tmp, { recursive: true })
 console.log('ok')
