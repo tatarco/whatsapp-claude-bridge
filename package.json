@@ -1,0 +1,13 @@
+{
+  "name": "whatsapp-claude-bridge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local WhatsApp bridge and Claude Code skill, one process per number",
+  "main": "wa.js",
+  "scripts": { "test": "node test.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "baileys": "git+https://github.com/tatarco/Baileys.git#b8f2fa96770b3a561d066b823c56b0c370f89aa1",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

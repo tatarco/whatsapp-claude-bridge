@@ -1,0 +1,8 @@
+node_modules/
+auth/
+media/
+*.jsonl
+*.log
+contacts.json
+qr.txt
+pair-code.txt
